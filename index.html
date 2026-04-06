@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Compra sin IVA — Calculadora de vivienda</title>
+  <meta name="description" content="Simula cuánto ahorrarías si se elimina el IVA a la vivienda nueva en Chile. Calcula el ahorro en UF y el impacto en tu dividendo mensual.">
+  <meta property="og:title" content="Compra sin IVA">
+  <meta property="og:description" content="Simula cuánto ahorrarías si se elimina el IVA a la vivienda nueva en Chile.">
+  <meta property="og:type" content="website">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --brand: #1a3a2e;
+      --brand-light: #e8f2ed;
+      --brand-mid: #2d5c47;
+      --accent: #c8a96e;
+      --text: #1a1a1a;
+      --text-muted: #6b7280;
+      --border: #e2e8e4;
+      --surface: #f7faf8;
+      --white: #ffffff;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      color: var(--text);
+      background: var(--surface);
+      min-height: 100vh;
+    }
+
+    /* ── NAV ── */
+    nav {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 0 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 56px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .nav-brand {
+      font-family: 'Fraunces', serif;
+      font-size: 20px;
+      font-weight: 300;
+      color: var(--brand);
+      text-decoration: none;
+    }
+    .nav-links { display: flex; gap: 1.5rem; }
+    .nav-links a {
+      font-size: 13px;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+    .nav-links a:hover { color: var(--brand); }
+
+    /* ── LAYOUT ── */
+    .page { max-width: 900px; margin: 0 auto; padding: 2rem 1rem 4rem; }
+
+    /* ── HERO ── */
+    .hero {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 2.5rem 2rem 2rem;
+      margin-bottom: 1.5rem;
+    }
+    .brand-line {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .brand-name {
+      font-family: 'Fraunces', serif;
+      font-size: 32px;
+      font-weight: 300;
+      color: var(--brand);
+      letter-spacing: -0.5px;
+    }
+    .brand-tag {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      padding: 3px 10px;
+      border: 1px solid var(--accent);
+      border-radius: 20px;
+    }
+    .hero-sub {
+      font-size: 15px;
+      color: var(--text-muted);
+      font-weight: 300;
+      line-height: 1.6;
+      max-width: 540px;
+    }
+    .uf-bar {
+      margin-top: 16px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      background: var(--brand-light);
+      border-radius: 8px;
+    }
+    .uf-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--brand-mid); }
+    .uf-label { font-size: 12px; color: var(--brand-mid); font-weight: 500; }
+    .uf-val { font-size: 13px; font-weight: 500; color: var(--brand); }
+
+    /* ── CALCULADORA ── */
+    .calc-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+    }
+    .calc-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+    @media (max-width: 620px) { .calc-grid { grid-template-columns: 1fr; } }
+
+    .panel { padding: 1.8rem; }
+    .panel:first-child { border-right: 1px solid var(--border); }
+    @media (max-width: 620px) {
+      .panel:first-child { border-right: none; border-bottom: 1px solid var(--border); }
+    }
+
+    .section-label {
+      font-size: 10px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--text-muted);
+      margin-bottom: 1.2rem;
+    }
+
+    .field { margin-bottom: 1.2rem; }
+    .field label {
+      display: block;
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    .field input, .field select {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: 'DM Sans', sans-serif;
+      color: var(--text);
+      background: var(--white);
+      outline: none;
+      transition: border 0.15s;
+      -webkit-appearance: none;
+    }
+    .field input:focus, .field select:focus { border-color: var(--brand-mid); }
+    .unit { position: relative; }
+    .unit input { padding-right: 44px; }
+    .unit::after {
+      content: attr(data-unit);
+      position: absolute;
+      right: 13px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 12px;
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    .toggle-row { display: flex; gap: 6px; margin-bottom: 1.2rem; }
+    .toggle-btn {
+      flex: 1;
+      padding: 9px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 13px;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+      background: var(--white);
+      color: var(--text-muted);
+      transition: all 0.15s;
+    }
+    .toggle-btn.active { background: var(--brand); color: #fff; border-color: var(--brand); }
+
+    .results {
+      background: var(--surface);
+      border-radius: 10px;
+      padding: 1.2rem;
+      margin-bottom: 1rem;
+    }
+    .result-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 7px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .result-row:last-child { border-bottom: none; }
+    .result-row .rl { font-size: 13px; color: var(--text-muted); }
+    .result-row .rv { font-size: 14px; font-weight: 500; color: var(--text); }
+    .result-row.highlight .rl { color: var(--brand-mid); font-weight: 500; }
+    .result-row.highlight .rv { color: var(--brand); font-size: 15px; }
+
+    .saving-banner {
+      background: var(--brand);
+      color: #fff;
+      border-radius: 10px;
+      padding: 1.2rem;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .saving-amount {
+      font-family: 'Fraunces', serif;
+      font-size: 30px;
+      font-weight: 300;
+      line-height: 1;
+    }
+    .saving-label { font-size: 12px; opacity: 0.8; margin-top: 3px; }
+    .saving-sub { font-size: 11px; opacity: 0.65; margin-top: 2px; }
+    .sep-line { width: 1px; background: rgba(255,255,255,0.25); align-self: stretch; }
+
+    .calc-disclaimer {
+      padding: 1rem 1.8rem;
+      font-size: 11px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    /* ── FAQ ── */
+    .faq-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .faq-header {
+      padding: 2rem 2rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .faq-title {
+      font-family: 'Fraunces', serif;
+      font-size: 22px;
+      font-weight: 300;
+      color: var(--brand);
+      margin-bottom: 6px;
+    }
+    .faq-sub { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+    .update-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background: var(--brand-light);
+      border-radius: 20px;
+      margin-bottom: 12px;
+    }
+    .update-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--brand-mid); }
+    .update-text { font-size: 11px; color: var(--brand-mid); font-weight: 500; }
+
+    .faq-body { padding: 1.5rem 2rem 2rem; }
+    .faq-group { margin-bottom: 2rem; }
+    .faq-group:last-child { margin-bottom: 0; }
+    .group-label {
+      font-size: 10px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--accent);
+      margin-bottom: 0.8rem;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .faq-item {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 8px;
+      overflow: hidden;
+      background: var(--white);
+    }
+    .faq-q {
+      width: 100%;
+      text-align: left;
+      padding: 14px 16px;
+      background: none;
+      border: none;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text);
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      line-height: 1.4;
+    }
+    .faq-q:hover { background: var(--surface); }
+    .faq-icon {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.2s;
+      color: var(--text-muted);
+      font-size: 16px;
+      font-weight: 300;
+    }
+    .faq-item.open .faq-icon {
+      background: var(--brand);
+      border-color: var(--brand);
+      color: #fff;
+      transform: rotate(45deg);
+    }
+    .faq-a {
+      display: none;
+      padding: 0 16px 16px;
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.8;
+    }
+    .faq-item.open .faq-a { display: block; }
+    .faq-a p { margin-bottom: 8px; }
+    .faq-a p:last-child { margin-bottom: 0; }
+    .faq-a strong { color: var(--text); font-weight: 500; }
+    .faq-a ul { padding-left: 16px; margin-top: 4px; }
+    .faq-a ul li { margin-bottom: 5px; }
+    .pill {
+      display: inline-block;
+      padding: 2px 8px;
+      background: var(--brand-light);
+      color: var(--brand-mid);
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 500;
+      margin-right: 4px;
+    }
+    .formula {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 12px;
+      color: var(--brand);
+      margin: 8px 0;
+      font-family: monospace;
+      line-height: 1.8;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      max-width: 900px;
+      margin: 3rem auto 0;
+      padding: 0 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    footer p { font-size: 11px; color: var(--text-muted); }
+    footer a { color: var(--brand-mid); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <a href="#" class="nav-brand">Compra sin IVA</a>
+    <div class="nav-links">
+      <a href="#calculadora">Calculadora</a>
+      <a href="#faq">Preguntas frecuentes</a>
+    </div>
+  </nav>
+
+  <div class="page">
+
+    <!-- HERO -->
+    <div class="hero">
+      <div class="brand-line">
+        <span class="brand-name">Compra sin IVA</span>
+        <span class="brand-tag">calculadora</span>
+      </div>
+      <p class="hero-sub">Simula cuánto ahorrarías si se elimina el IVA a la vivienda nueva en Chile. Calcula el ahorro en UF y el impacto en tu dividendo mensual.</p>
+      <div class="uf-bar">
+        <div class="uf-dot"></div>
+        <span class="uf-label">UF hoy</span>
+        <span class="uf-val" id="uf-display">cargando...</span>
+      </div>
+    </div>
+
+    <!-- CALCULADORA -->
+    <div class="calc-card" id="calculadora">
+      <div class="calc-grid">
+        <div class="panel">
+          <div class="section-label">Valor de la propiedad</div>
+
+          <div class="field">
+            <label>Ingresa el valor en</label>
+            <div class="toggle-row">
+              <button class="toggle-btn active" id="btn-uf" onclick="setMode('uf')">UF</button>
+              <button class="toggle-btn" id="btn-clp" onclick="setMode('clp')">Pesos CLP</button>
+            </div>
+          </div>
+
+          <div class="field" id="field-uf">
+            <label>Precio en UF</label>
+            <div class="unit" data-unit="UF">
+              <input type="number" id="precio-uf" value="3500" min="500" max="50000" oninput="calcular()">
+            </div>
+          </div>
+
+          <div class="field" id="field-clp" style="display:none">
+            <label>Precio en pesos</label>
+            <div class="unit" data-unit="$">
+              <input type="number" id="precio-clp" placeholder="ej: 150000000" oninput="calcularDesdeCLP()">
+            </div>
+          </div>
+
+          <div class="section-label" style="margin-top:1.4rem">Simulador de dividendo</div>
+
+          <div class="field">
+            <label>Pie (% del valor)</label>
+            <div class="unit" data-unit="%">
+              <input type="number" id="pie-pct" value="20" min="10" max="50" oninput="calcular()">
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Tasa de interés anual</label>
+            <div class="unit" data-unit="%">
+              <input type="number" id="tasa" value="4.5" min="1" max="12" step="0.1" oninput="calcular()">
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Plazo del crédito</label>
+            <select id="plazo" onchange="calcular()">
+              <option value="20">20 años</option>
+              <option value="25" selected>25 años</option>
+              <option value="30">30 años</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="section-label">Resultado del cálculo</div>
+
+          <div class="results">
+            <div class="result-row">
+              <span class="rl">Precio actual (con IVA 19%)</span>
+              <span class="rv" id="r-precio-actual">—</span>
+            </div>
+            <div class="result-row">
+              <span class="rl">Precio sin IVA</span>
+              <span class="rv" id="r-precio-sin-iva">—</span>
+            </div>
+            <div class="result-row">
+              <span class="rl">Precio actual en CLP</span>
+              <span class="rv" id="r-precio-clp">—</span>
+            </div>
+            <div class="result-row">
+              <span class="rl">Precio sin IVA en CLP</span>
+              <span class="rv" id="r-precio-sin-clp">—</span>
+            </div>
+          </div>
+
+          <div class="saving-banner">
+            <div>
+              <div class="saving-amount" id="sv-uf">—</div>
+              <div class="saving-label">UF de ahorro</div>
+              <div class="saving-sub" id="sv-clp">— en pesos</div>
+            </div>
+            <div class="sep-line"></div>
+            <div style="flex:1">
+              <div style="font-size:11px;opacity:0.75;margin-bottom:4px">ahorro en dividendo mensual</div>
+              <div style="font-family:'Fraunces',serif;font-size:22px;font-weight:300" id="sv-div">—</div>
+              <div style="font-size:11px;opacity:0.65;margin-top:2px" id="sv-div-uf">— UF/mes menos</div>
+            </div>
+          </div>
+
+          <div class="results">
+            <div class="section-label" style="margin-bottom:0.8rem">dividendo mensual estimado</div>
+            <div class="result-row highlight">
+              <span class="rl">Con IVA (hoy)</span>
+              <span class="rv" id="r-div-con">—</span>
+            </div>
+            <div class="result-row highlight">
+              <span class="rl">Sin IVA (propuesta)</span>
+              <span class="rv" id="r-div-sin">—</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="calc-disclaimer">
+        Cálculo estimativo. El IVA inmobiliario en Chile aplica sobre la construcción; para simplificar esta simulación se aplica al precio total de venta. El dividendo se calcula con cuota francesa (capital + interés). No incluye seguros ni gastos operacionales del crédito. Valor UF obtenido desde mindicador.cl (Banco Central de Chile).
+      </div>
+    </div>
+
+    <!-- FAQ -->
+    <div class="faq-card" id="faq">
+      <div class="faq-header">
+        <div class="update-badge">
+          <div class="update-dot"></div>
+          <span class="update-text">Datos actualizados diariamente</span>
+        </div>
+        <div class="faq-title">Preguntas frecuentes</div>
+        <p class="faq-sub">Cómo funciona la calculadora, en qué se basa y qué considera cada parámetro.</p>
+      </div>
+
+      <div class="faq-body">
+
+        <div class="faq-group">
+          <div class="group-label">Sobre el cálculo</div>
+
+          <div class="faq-item">
+            <button class="faq-q" onclick="toggle(this)">
+              ¿En qué se basa el cálculo del IVA?
+              <div class="faq-icon">+</div>
+            </button>
+            <div class="faq-a">
+              <p>En Chile, la Ley 20.780 estableció que la venta de viviendas nuevas está afecta al <strong>IVA del 19%</strong>. Esto significa que el precio que paga el comprador ya incluye ese impuesto.</p>
+              <p>La calculadora despeja el precio base (sin IVA) desde el precio total usando la fórmula:</p>
+              <div class="formula">Precio sin IVA = Precio total ÷ 1,19</div>
+              <p>La diferencia entre ambos valores es el ahorro si la ley que elimina el IVA a la vivienda nueva llegara a aplicarse.</p>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-q" onclick="toggle(this)">
+              ¿Cómo se calcula el dividendo mensual?
+              <div class="faq-icon">+</div>
+            </button>
+            <div class="faq-a">
+              <p>Se utiliza la <strong>cuota francesa</strong>, que es el método estándar de los créditos hipotecarios en Chile. En este sistema, cada cuota mensual es fija e incluye una parte de capital y una parte de interés.</p>
+              <div class="formula">Cuota = Monto × [r(1+r)ⁿ] ÷ [(1+r)ⁿ - 1]<br>donde r = tasa mensual, n = número de cuotas</div>
+              <p>El monto financiado es el precio de la propiedad menos el pie ingresado. El resultado se expresa en UF y en pesos al valor del día.</p>
+              <p><strong>No incluye</strong> seguros de desgravamen ni de incendio, ni gastos operacionales del crédito, que varían según el banco.</p>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-q" onclick="toggle(this)">
+              ¿El cálculo aplica sobre el precio total o solo la construcción?
+              <div class="faq-icon">+</div>
+            </button>
+            <div class="faq-a">
+              <p>Técnicamente, el IVA inmobiliario <strong>no aplica sobre el terreno</strong>, solo sobre la construcción. En la práctica, el precio de venta que ve el comprador ya incluye el IVA calculado sobre el total.</p>
+              <p>Esta calculadora aplica el IVA sobre el <strong>precio total de venta</strong>, que es la forma más directa y transparente de mostrar el impacto real para el comprador. Se trata de una simulación estimativa, no de una liquidación tributaria.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-group">
+          <div class="group-label">Sobre los datos</div>
+
+          <div class="faq-item">
+            <button class="faq-q" onclick="toggle(this)">
+              ¿De dónde viene el valor de la UF y con qué frecuencia se actualiza?
+              <div class="faq-icon">+</div>
+            </button>
+            <div class="faq-a">
+              <p>El valor de la UF se obtiene <strong>automáticamente cada vez que alguien abre la calculadora</strong>, desde la API pública de <strong>mindicador.cl</strong>, que toma el valor oficial publicado diariamente por el Banco Central de Chile.</p>
+              <p>No hay intervención manual ni valor fijo: siempre verás la UF del día actual.</p>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-q" onclick="toggle(this)">
+              ¿Qué pasa si ingreso el precio en pesos en vez de UF?
+              <div class="faq-icon">+</div>
+            </button>
+            <div class="faq-a">
+              <p>La calculadora convierte automáticamente el valor en pesos a UF usando el valor del día. A partir de ese punto, todos los cálculos se hacen en UF para mayor precisión, y los resultados se muestran en ambas monedas.</p>
+              <p>Esto es útil cuando tienes el precio de lista en pesos y quieres entender el impacto real en términos de UF.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-group">
+          <div class="group-label">Sobre los parámetros</div>
+
+          <div class="faq-item">
+            <button class="faq-q" onclick="toggle(this)">
+              ¿Qué representa cada parámetro que puedo modificar?
+              <div class="faq-icon">+</div>
+            </button>
+            <div class="faq-a">
+              <p>La calculadora considera cuatro variables ajustables:</p>
+              <ul>
+                <li><span class="pill">Precio</span> Valor de la propiedad en UF o pesos. Es el precio total de venta con IVA incluido.</li>
+                <li><span class="pill">Pie %</span> Porcentaje del valor que se paga al contado. El mínimo legal es 10%, pero los bancos suelen pedir entre 20% y 25%.</li>
+                <li><span class="pill">Tasa</span> Tasa de interés anual del crédito hipotecario. En Chile la tasa promedio en 2024–2025 se mueve entre 4% y 5,5% según el banco y el perfil del solicitante.</li>
+                <li><span class="pill">Plazo</span> Años del crédito. A mayor plazo, menor dividendo mensual, pero mayor costo total de intereses.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-q" onclick="toggle(this)">
+              ¿Cuál es la tasa de interés referencial que debería usar?
+              <div class="faq-icon">+</div>
+            </button>
+            <div class="faq-a">
+              <p>El valor por defecto es <strong>4,5% anual</strong>, que refleja el promedio del mercado hipotecario chileno en 2024–2025. Sin embargo, la tasa real depende de varios factores:</p>
+              <ul>
+                <li>El banco o institución financiera</li>
+                <li>Tu perfil crediticio y nivel de endeudamiento</li>
+                <li>El monto y plazo del crédito</li>
+                <li>Si contratas productos asociados (cuenta corriente, seguro de vida)</li>
+              </ul>
+              <p>Para una simulación más precisa, usa la tasa que te haya ofrecido tu banco directamente.</p>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-q" onclick="toggle(this)">
+              ¿Esta calculadora es una asesoría financiera?
+              <div class="faq-icon">+</div>
+            </button>
+            <div class="faq-a">
+              <p>No. Esta es una herramienta de estimación informativa para que cualquier persona pueda entender el <strong>impacto potencial de la eliminación del IVA a la vivienda</strong> en términos concretos.</p>
+              <p>Los resultados son aproximados y no reemplazan la simulación formal de un banco, corredor de propiedades o asesor financiero. Siempre consulta con un profesional antes de tomar una decisión de compra.</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>Compra sin IVA · Herramienta de estimación informativa</p>
+    <p>Datos UF: <a href="https://mindicador.cl" target="_blank">mindicador.cl</a> · Banco Central de Chile</p>
+  </footer>
+
+  <script>
+    let ufHoy = 38500;
+    let modo = 'uf';
+    const IVA = 0.19;
+
+    async function cargarUF() {
+      try {
+        const hoy = new Date();
+        const dd = String(hoy.getDate()).padStart(2, '0');
+        const mm = String(hoy.getMonth() + 1).padStart(2, '0');
+        const yyyy = hoy.getFullYear();
+        const r = await fetch(`https://mindicador.cl/api/uf/${dd}-${mm}-${yyyy}`);
+        const d = await r.json();
+        if (d.serie && d.serie.length > 0) ufHoy = d.serie[0].valor;
+      } catch(e) {}
+      document.getElementById('uf-display').textContent = '$' + ufHoy.toLocaleString('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      calcular();
+    }
+
+    function setMode(m) {
+      modo = m;
+      document.getElementById('btn-uf').classList.toggle('active', m === 'uf');
+      document.getElementById('btn-clp').classList.toggle('active', m === 'clp');
+      document.getElementById('field-uf').style.display = m === 'uf' ? 'block' : 'none';
+      document.getElementById('field-clp').style.display = m === 'clp' ? 'block' : 'none';
+      calcular();
+    }
+
+    function calcularDesdeCLP() {
+      const clp = parseFloat(document.getElementById('precio-clp').value) || 0;
+      if (clp > 0 && ufHoy > 0) document.getElementById('precio-uf').value = Math.round(clp / ufHoy);
+      calcular();
+    }
+
+    function dividendo(montoUF, tasaAnual, plazoAnios) {
+      const n = plazoAnios * 12;
+      const r = tasaAnual / 100 / 12;
+      if (r === 0) return montoUF / n;
+      return montoUF * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+    }
+
+    function fmt(uf) { return uf.toFixed(2) + ' UF'; }
+    function fmtClp(uf) { return '$' + Math.round(uf * ufHoy).toLocaleString('es-CL'); }
+
+    function calcular() {
+      const precioConIVA = parseFloat(document.getElementById('precio-uf').value) || 0;
+      const piePct = parseFloat(document.getElementById('pie-pct').value) || 20;
+      const tasa = parseFloat(document.getElementById('tasa').value) || 4.5;
+      const plazo = parseInt(document.getElementById('plazo').value) || 25;
+
+      if (precioConIVA <= 0) return;
+
+      const precioSinIVA = precioConIVA / (1 + IVA);
+      const ahorro = precioConIVA - precioSinIVA;
+      const creditoConIVA = precioConIVA * (1 - piePct / 100);
+      const creditoSinIVA = precioSinIVA * (1 - piePct / 100);
+      const divConIVA = dividendo(creditoConIVA, tasa, plazo);
+      const divSinIVA = dividendo(creditoSinIVA, tasa, plazo);
+      const ahorroDivUF = divConIVA - divSinIVA;
+
+      document.getElementById('r-precio-actual').textContent = fmt(precioConIVA);
+      document.getElementById('r-precio-sin-iva').textContent = fmt(precioSinIVA);
+      document.getElementById('r-precio-clp').textContent = fmtClp(precioConIVA);
+      document.getElementById('r-precio-sin-clp').textContent = fmtClp(precioSinIVA);
+      document.getElementById('sv-uf').textContent = ahorro.toFixed(1) + ' UF';
+      document.getElementById('sv-clp').textContent = fmtClp(ahorro) + ' menos';
+      document.getElementById('sv-div').textContent = '$' + Math.round(ahorroDivUF * ufHoy).toLocaleString('es-CL');
+      document.getElementById('sv-div-uf').textContent = ahorroDivUF.toFixed(2) + ' UF/mes menos';
+      document.getElementById('r-div-con').textContent = fmt(divConIVA) + ' · ' + fmtClp(divConIVA);
+      document.getElementById('r-div-sin').textContent = fmt(divSinIVA) + ' · ' + fmtClp(divSinIVA);
+    }
+
+    function toggle(btn) {
+      const item = btn.closest('.faq-item');
+      const isOpen = item.classList.contains('open');
+      document.querySelectorAll('.faq-item.open').forEach(el => el.classList.remove('open'));
+      if (!isOpen) item.classList.add('open');
+    }
+
+    cargarUF();
+  </script>
+</body>
+</html>
